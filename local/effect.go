@@ -7,8 +7,9 @@ import (
 )
 
 type Effect interface {
-	MonochromeImage() image.Image
+	Monochrome() image.Image
 	ReverseConcentration() image.Image
+	FourTone() image.Image
 }
 type effect struct {
 	inputImage image.Image
@@ -19,6 +20,7 @@ func NewEffect(in image.Image) Effect {
 	return &effect{in}
 }
 
+// 逆にする。
 func (ef *effect) ReverseConcentration() image.Image {
 	rect := ef.inputImage.Bounds()
 	width := rect.Size().X
@@ -30,9 +32,9 @@ func (ef *effect) ReverseConcentration() image.Image {
 			// 座標(x,y)のR, G, B, α の値を取得
 			r, g, b, a := ef.inputImage.At(x, y).RGBA()
 			//反転する
-			col.R = math.MaxInt16 - uint16(r)
-			col.G = math.MaxInt16 - uint16(g)
-			col.B = math.MaxInt16 - uint16(b)
+			col.R = math.MaxUint16 - uint16(r)
+			col.G = math.MaxUint16 - uint16(g)
+			col.B = math.MaxUint16 - uint16(b)
 			col.A = uint16(a)
 			rgba.Set(x, y, col)
 		}
@@ -40,7 +42,8 @@ func (ef *effect) ReverseConcentration() image.Image {
 	return rgba
 }
 
-func (ef *effect) MonochromeImage() image.Image {
+// モノクロにする
+func (ef *effect) Monochrome() image.Image {
 	rect := ef.inputImage.Bounds()
 	width := rect.Size().X
 	height := rect.Size().Y
@@ -63,4 +66,49 @@ func (ef *effect) MonochromeImage() image.Image {
 		}
 	}
 	return rgba
+}
+
+// 4階調にする
+func (ef *effect) FourTone() image.Image {
+	rect := ef.inputImage.Bounds()
+	width := rect.Size().X
+	height := rect.Size().Y
+	rgba := image.NewRGBA(rect)
+
+	// この処理での特殊な値
+	//	4階調とする
+	tone := 4
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			// 座標(x,y)のR, G, B, α の値を取得
+			r, g, b, a := ef.inputImage.At(x, y).RGBA()
+			effectFunction := fourToneColor
+			rgba.Set(x, y, effectFunction(r, g, b, a, tone))
+		}
+	}
+	return rgba
+}
+
+// カラーの場合の階調変更
+func fourToneColor(r, g, b, a uint32, tone int) color.RGBA64 {
+	var col color.RGBA64
+	z1 := uint16(math.MaxUint16 / (tone))
+	z2 := uint16(math.MaxUint16 / (tone - 1))
+	vals := []uint32{r, g, b}
+	ptr := []*uint16{&col.R, &col.G, &col.B}
+	//	計算する
+	for i, v := range vals {
+		*ptr[i] = (uint16(v) / z1) * z2
+	}
+	col.A = uint16(a)
+	return col
+}
+
+// モノクロ画像判定
+func isMonochromeImage(r, g, b, a uint32) bool {
+	retVal := false
+	if r == g && g == b {
+		retVal = true
+	}
+	return retVal
 }
