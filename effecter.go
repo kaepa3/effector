@@ -1,4 +1,4 @@
-package effect
+package effecter
 
 import (
 	"image"
