@@ -26,7 +26,9 @@ func Test_Effect(t *testing.T) {
 	}
 	for _, v := range funcs {
 		// ファイル出力
-		outputFile(v.Plefex, v.Action())
+		if outputFile(v.Plefex, v.Action()) {
+
+		}
 	}
 }
 
@@ -47,16 +49,19 @@ func inputFile() image.Image {
 	return inputImage
 }
 
-func outputFile(append string, outputImage image.Image) {
+func outputFile(append string, outputImage image.Image) bool {
 	outputFile, err := os.Create("sampleimage/test_" + append + ".jpg")
 	if nil != err {
 		fmt.Println(err)
+		return false
 	}
 	option := &jpeg.Options{Quality: 100}
 	err = jpeg.Encode(outputFile, outputImage, option) // エンコード
 
 	if nil != err {
 		fmt.Println(err)
+		return false
 	}
 	defer outputFile.Close()
+	return true
 }
