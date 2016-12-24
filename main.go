@@ -41,8 +41,8 @@ func main() {
 
 func convert(inputImage image.Image) (image.Image, string) {
 	eff := effect.NewEffect(inputImage)
-	//return eff.ConvertToMonochromeImage(), "mono"
+	return eff.Monochrome(), "mono"
 	//return eff.ReverseConcentration(), "revcon"
-	return eff.FourTone(), "fourtone"
+	//return eff.FourTone(), "fourtone"
 
 }
