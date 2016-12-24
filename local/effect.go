@@ -6,6 +6,7 @@ import (
 	"math"
 )
 
+//Effect is image effect interface
 type Effect interface {
 	Monochrome() image.Image
 	ReverseConcentration() image.Image
@@ -15,11 +16,12 @@ type effect struct {
 	inputImage image.Image
 }
 
-//	NewEffect is create new effect object
+//NewEffect is create new effect object
 func NewEffect(in image.Image) Effect {
 	return &effect{in}
 }
 
+//ConvertFunc is definition of the Effect Function
 type ConvertFunc func(r, g, b, a uint32) color.RGBA64
 
 func (ef *effect) imageLoop(effectFunction ConvertFunc) image.Image {
