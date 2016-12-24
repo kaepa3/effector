@@ -32,7 +32,7 @@ func Test_Effect(t *testing.T) {
 
 func inputFile() image.Image {
 	// ファイル読み込み
-	inputFile, err := os.Open("test.jpg")
+	inputFile, err := os.Open("sampleimage/test.jpg")
 	if nil != err {
 		fmt.Println(err)
 		return nil
@@ -48,7 +48,7 @@ func inputFile() image.Image {
 }
 
 func outputFile(append string, outputImage image.Image) {
-	outputFile, err := os.Create("test_" + append + ".jpg")
+	outputFile, err := os.Create("sampleimage/test_" + append + ".jpg")
 	if nil != err {
 		fmt.Println(err)
 	}
