@@ -21,17 +21,15 @@ func main() {
 	if nil != err {
 		fmt.Println(err)
 	}
-
 	defer inputFile.Close()
 
+	outputImage, append := convert(inputImage) // 変換
+	option := &jpeg.Options{Quality: 100}
 	// ファイル出力
-	outputFile, err := os.Create("plant4_out.jpg")
+	outputFile, err := os.Create("plant4_" + append + ".jpg")
 	if nil != err {
 		fmt.Println(err)
 	}
-
-	outputImage := convert(inputImage) // 変換
-	option := &jpeg.Options{Quality: 100}
 	err = jpeg.Encode(outputFile, outputImage, option) // エンコード
 
 	if nil != err {
@@ -41,8 +39,8 @@ func main() {
 	defer outputFile.Close()
 }
 
-func convert(inputImage image.Image) image.Image {
+func convert(inputImage image.Image) (image.Image, string) {
 	eff := effect.NewEffect(inputImage)
-
-	return eff.ConvertToMonochromeImage()
+	//return eff.ConvertToMonochromeImage(), "mono"
+	return eff.ReverseConcentration(), "revcon"
 }
