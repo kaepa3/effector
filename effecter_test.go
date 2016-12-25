@@ -23,6 +23,8 @@ func Test_Effect(t *testing.T) {
 		{eff.Monochrome, "mono"},
 		{eff.ReverseConcentration, "revcon"},
 		{eff.FourTone, "fourtone"},
+		{eff.ChangeSizeKin, "sizekin"},
+		{eff.ChangeSizeSen, "sizesen"},
 	}
 	for _, v := range funcs {
 		// ファイル出力
