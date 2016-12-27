@@ -3,14 +3,14 @@ package effecter
 import (
 	"fmt"
 	"image"
-	"image/jpeg"
+	"image/png"
 	"os"
 	"testing"
 )
 
 func Test_Effect(t *testing.T) {
 	// ファイル読み込み
-	inputImage := inputFile()
+	inputImage := inputFile("sampleimage/test.png")
 	if nil == inputImage {
 		t.Error("error read file")
 	}
@@ -25,18 +25,27 @@ func Test_Effect(t *testing.T) {
 		{eff.FourTone, "fourtone"},
 		{eff.ChangeSizeKin, "sizekin"},
 		{eff.ChangeSizeSen, "sizesen"},
+		{eff.LinearDensity, "linerden"},
+		{eff.UnlinearDensity, "unden"},
+		{eff.ContrastImprovement, "contrast"},
+		{eff.AverageHistogram, "ave"},
 	}
 	for _, v := range funcs {
 		// ファイル出力
-		if outputFile(v.Plefex, v.Action()) {
-
-		}
+		outputFile(v.Plefex, v.Action())
+	}
+}
+func Test_OutMeta(t *testing.T) {
+	eff := NewEffect(inputFile("sampleimage/test_ave.png"))
+	normalFuncs := []func(){eff.Histogram}
+	for _, v := range normalFuncs {
+		v()
 	}
 }
 
-func inputFile() image.Image {
+func inputFile(path string) image.Image {
 	// ファイル読み込み
-	inputFile, err := os.Open("sampleimage/test.jpg")
+	inputFile, err := os.Open(path)
 	if nil != err {
 		fmt.Println(err)
 		return nil
@@ -52,13 +61,12 @@ func inputFile() image.Image {
 }
 
 func outputFile(append string, outputImage image.Image) bool {
-	outputFile, err := os.Create("sampleimage/test_" + append + ".jpg")
+	outputFile, err := os.Create("sampleimage/test_" + append + ".png")
 	if nil != err {
 		fmt.Println(err)
 		return false
 	}
-	option := &jpeg.Options{Quality: 100}
-	err = jpeg.Encode(outputFile, outputImage, option) // エンコード
+	err = png.Encode(outputFile, outputImage) // エンコード
 
 	if nil != err {
 		fmt.Println(err)
