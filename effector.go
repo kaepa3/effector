@@ -98,25 +98,24 @@ func ChangeSizeSen(img image.Image, xRatio, yRatio float64) image.Image {
 	width := up(rect.Size().X, xRatio)
 	height := up(rect.Size().Y, yRatio)
 	newRect := image.Rect(0, 0, width, height)
-	rgba := image.NewRGBA(newRect)
+	rgba := image.NewRGBA64(newRect)
+	icom.ImageLoop(rgba, func(x int, y int) {
+		con := senning(img, x, y, xRatio, yRatio)
+		rgba.Set(x, y, con)
 
-	for x := 0; x < width; x++ {
-		for y := 0; y < height; y++ {
-			rgba.Set(x, y, senning(rect, x, y, xRatio, yRatio))
-		}
-	}
+	})
 	return rgba
 }
 
 func senning(img image.Image, x, y int, xRatio, yRatio float64) color.RGBA64 {
 	// 比較のための４点とその位置の比を求める関数
-	createParam := func(inSize, outSize int, ratio float64) (int, int, float64) {
-		v1 := down(outSize, ratio)
+	createParam := func(inSize, pos int, ratio float64) (int, int, float64) {
+		v1 := down(pos, ratio)
 		v2 := v1 + 1
 		if v2 > inSize-1 {
 			v2 = inSize - 1
 		}
-		v3 := float64(outSize)/ratio - float64(v1)
+		v3 := float64(pos)/ratio - float64(v1)
 		return v1, v2, v3
 	}
 	//	計測点（パラメータ）を作る

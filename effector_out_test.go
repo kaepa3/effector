@@ -28,7 +28,7 @@ func Test_Effect(t *testing.T) {
 func Test_SizeChange(t *testing.T) {
 	img := inputFile("sampleimage/test.jpg")
 	outputFile("sizekin", ChangeSizeKin(img, 0.8, 0.8))
-	outputFile("sizesen", ChangeSizeSen(img, 0.7, 0.2))
+	outputFile("sizesen", ChangeSizeSen(img, 0.7, 0.7))
 }
 
 func Test_OutMeta(t *testing.T) {
