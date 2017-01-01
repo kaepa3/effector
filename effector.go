@@ -14,7 +14,7 @@ import (
 	"github.com/kaepa3/effector/icom"
 )
 
-//ReverseConcentration は濃度を逆転する
+//ReverseConcentration は与えられた画像の濃度を逆転する
 func ReverseConcentration(img image.Image) image.Image {
 	rgba := image.NewRGBA(img.Bounds())
 	icom.ImageLoop(img, func(x, y int) {
@@ -29,7 +29,7 @@ func ReverseConcentration(img image.Image) image.Image {
 	return rgba
 }
 
-//Monochrome モノクロにする
+//Monochrome は与えられた画像をモノクロにする
 func Monochrome(img image.Image) image.Image {
 	rgba := image.NewRGBA(img.Bounds())
 	getMono := func(r, g, b float64) uint16 {
@@ -49,7 +49,7 @@ func Monochrome(img image.Image) image.Image {
 	return rgba
 }
 
-//FourToneは4階調にする
+//FourTone は与えられた画像を4階調に変更する
 func FourTone(img image.Image) image.Image {
 	rgba := image.NewRGBA(img.Bounds())
 
@@ -75,7 +75,7 @@ func FourTone(img image.Image) image.Image {
 var up = func(val int, rat float64) int { return int(float64(val) * rat) }
 var down = func(val int, rat float64) int { return int(float64(val) / rat) }
 
-//ChangeSizeKinは最近傍方
+//ChangeSizeKin は与えられた画像を最小近傍方を使用して拡大・縮小する。
 func ChangeSizeKin(img image.Image, xRatio, yRatio float64) image.Image {
 	rect := img.Bounds()
 	width := up(rect.Size().X, xRatio)
@@ -92,6 +92,7 @@ func ChangeSizeKin(img image.Image, xRatio, yRatio float64) image.Image {
 	return rgba
 }
 
+//ChangeSizeSen は与えられた画像を線形補間法を使用して拡大・縮小する。
 func ChangeSizeSen(img image.Image, xRatio, yRatio float64) image.Image {
 	rect := img.Bounds()
 	width := up(rect.Size().X, xRatio)
@@ -147,7 +148,7 @@ func senning(img image.Image, x, y int, xRatio, yRatio float64) color.RGBA64 {
 	return color.RGBA64{con(valsR), con(valsG), con(valsB), con(valsA)}
 }
 
-// 線形濃度変換
+// LinearDensity は与えられた画像を線形濃度変換を使用して濃度変換する。
 func LinearDensity(img image.Image, levelA, levelB uint16) image.Image {
 	con := func(val uint32) uint16 {
 		v := math.MaxUint16 * (float64((uint16(val) - levelA)) / float64((levelB - levelA)))
@@ -177,7 +178,7 @@ func unlinerCon(val uint32, gamma float64) uint16 {
 	return uint16(v)
 }
 
-// 非線形濃度変換
+// UnlinearDensity は与えられた画像を非線形濃度変換を使用して濃度変換する。
 func UnlinearDensity(img image.Image) image.Image {
 	rgba := image.NewRGBA(img.Bounds())
 	icom.ImageLoop(img, func(x, y int) {
@@ -187,7 +188,7 @@ func UnlinearDensity(img image.Image) image.Image {
 	return rgba
 }
 
-// コントラスト改善
+// ContrastImprovement は与えられた画像のコントラスト改善を実施する
 func ContrastImprovement(img image.Image) image.Image {
 	con := func(val uint32) uint16 {
 		maxUint := float64(math.MaxUint16)
@@ -213,7 +214,7 @@ func ContrastImprovement(img image.Image) image.Image {
 	return rgba
 }
 
-// ヒストグラム平均化
+// AverageHistogram は与えられた画像のヒストグラム平均化を実施する。
 func AverageHistogram(img image.Image) image.Image {
 	rect := img.Bounds()
 	//ヒストグラムの取得
@@ -245,6 +246,7 @@ func createLookupTable(his [ex.ColorWidthAryMax]uint16, rect image.Rectangle) (t
 	return
 }
 
+// Histogram は与えられた画像のヒストグラムを作成する
 func Histogram(img image.Image, title, xLabel, yLabel, output string) {
 	//	グラフの準備
 	p, _ := plot.New()
