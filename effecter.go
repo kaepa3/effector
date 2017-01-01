@@ -52,26 +52,30 @@ func (ef *effect) ReverseConcentration() image.Image {
 	ef.imageLoop(func(x, y int) {
 		var col color.RGBA64
 		r, g, b, a := ef.inputImage.At(x, y).RGBA()
-		col.R = math.MaxUint16 - uint16(r)
-		col.G = math.MaxUint16 - uint16(g)
-		col.B = math.MaxUint16 - uint16(b)
+		col.R = ColorWidth - uint16(r)
+		col.G = ColorWidth - uint16(g)
+		col.B = ColorWidth - uint16(b)
 		col.A = uint16(a)
 		rgba.Set(x, y, col)
 	})
 	return rgba
 }
 
+const RedNTSC = 0.298912
+const GreenNTSC = 0.58611
+const BlueNTSC = 0.114478
+
 // モノクロにする
 func (ef *effect) Monochrome() image.Image {
 	rgba := image.NewRGBA(ef.inputImage.Bounds())
+	getMono := func(r, g, b float64) uint16 {
+		return uint16(r*RedNTSC + g*GreenNTSC + b*BlueNTSC)
+	}
 	ef.imageLoop(func(x, y int) {
 		var col color.RGBA64
 		r, g, b, a := ef.inputImage.At(x, y).RGBA()
 		//それぞれを重み付けして足し合わせる(NTSC 系加重平均法)
-		outR := float32(r) * 0.298912
-		outG := float32(g) * 0.58611
-		outB := float32(b) * 0.114478
-		mono := uint16(outR + outG + outB)
+		mono := getMono(float64(r), float64(g), float64(b))
 		col.R = mono
 		col.G = mono
 		col.B = mono
@@ -191,7 +195,8 @@ const RGBAMax = 3
 const IndexR = 0
 const IndexG = 1
 const IndexB = 2
-const ColorWidth = math.MaxUint16 + 1
+const ColorWidth = math.MaxUint16
+const ColorWidth_d = math.MaxUint16 + 1
 
 // 最近傍方
 func (ef *effect) Histogram(title, xLabel, yLabel, output string) {
@@ -214,7 +219,7 @@ func (ef *effect) Histogram(title, xLabel, yLabel, output string) {
 	return
 }
 
-func addPlotter(p *plot.Plot, data [ColorWidth]uint16, key int) {
+func addPlotter(p *plot.Plot, data [ColorWidth_d]uint16, key int) {
 	var line plotter.XYer
 	plots := make(plotter.XYs, len(data))
 	line = plots
@@ -229,7 +234,7 @@ func addPlotter(p *plot.Plot, data [ColorWidth]uint16, key int) {
 	return
 }
 
-func (ef *effect) makeHistogramData() (rD, gD, bD, lD [ColorWidth]uint16) {
+func (ef *effect) makeHistogramData() (rD, gD, bD, lD [ColorWidth_d]uint16) {
 	ef.imageLoop(func(x, y int) {
 		//画素をそれぞれ数える
 		r, g, b, _ := ef.inputImage.At(x, y).RGBA()
@@ -331,10 +336,10 @@ func (ef *effect) AverageHistogram() image.Image {
 	return buf.inputImage
 }
 
-func createLookupTable(his [ColorWidth]uint16, rect image.Rectangle) (table [ColorWidth]uint16) {
+func createLookupTable(his [ColorWidth_d]uint16, rect image.Rectangle) (table [ColorWidth_d]uint16) {
 	var sum, val uint16
 	//平均画素数
-	average := uint16(((rect.Size().X * rect.Size().Y) / ColorWidth) + 1)
+	average := uint16(((rect.Size().X * rect.Size().Y) / ColorWidth_d) + 1)
 	//平均値の計算
 	for i, v := range his {
 		sum += v

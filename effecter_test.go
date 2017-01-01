@@ -1,74 +1,116 @@
 package effecter
 
 import (
-	"fmt"
 	"image"
-	"image/png"
-	"os"
+	"image/color"
+	"math"
+	"math/rand"
 	"testing"
+	"time"
 )
 
-func Test_Effect(t *testing.T) {
-	// ファイル読み込み
-	inputImage := inputFile("sampleimage/test.jpg")
-	if nil == inputImage {
-		t.Error("error read file")
-	}
-	eff := NewEffect(inputImage)
-
-	funcs := []struct {
-		Action func() image.Image
-		Plefex string
-	}{
-		{eff.Monochrome, "mono"},
-		{eff.ReverseConcentration, "revcon"},
-		{eff.FourTone, "fourtone"},
-		{eff.ChangeSizeKin, "sizekin"},
-		{eff.ChangeSizeSen, "sizesen"},
-		{eff.LinearDensity, "linerden"},
-		{eff.UnlinearDensity, "unden"},
-		{eff.ContrastImprovement, "contrast"},
-		{eff.AverageHistogram, "ave"},
-	}
-	for _, v := range funcs {
-		// ファイル出力
-		outputFile(v.Plefex, v.Action())
-	}
-}
-func Test_OutMeta(t *testing.T) {
-	eff := NewEffect(inputFile("sampleimage/test.jpg"))
-	eff.Histogram("test.png hist", "nodo", "dosu", "sampleimage/hist_org.png")
+func createBuffImage(x, y int) image.Image {
+	rect := image.Rectangle{image.Point{0, 0}, image.Point{10, 10}}
+	rgba := image.NewRGBA(rect)
+	var obj effect
+	rand.Seed(time.Now().UnixNano())
+	obj.inputImage = rgba
+	obj.imageLoop(func(x, y int) {
+		valR := uint16(rand.Int31n(ColorWidth))
+		valG := uint16(rand.Int31n(ColorWidth))
+		valB := uint16(rand.Int31n(ColorWidth))
+		rgba.Set(x, y, color.RGBA64{valR, valG, valB, 0})
+	})
+	return rgba
 }
 
-func inputFile(path string) image.Image {
-	// ファイル読み込み
-	inputFile, err := os.Open(path)
-	if nil != err {
-		fmt.Println(err)
-		return nil
+//	imageLoopのテスト
+func Test_imageLoop(t *testing.T) {
+	// 10*10の画像を作る
+	var buf effect
+	buf.inputImage = createBuffImage(10, 10)
+	count := 0
+	buf.imageLoop(func(x, y int) {
+		count++
+	})
+	if count != 100 {
+		t.Errorf("call count Error:%d", count)
 	}
-	// decodeの実施
-	inputImage, _, err := image.Decode(inputFile)
-	if nil != err {
-		fmt.Println(err)
-		return nil
-	}
-	inputFile.Close()
-	return inputImage
 }
 
-func outputFile(append string, outputImage image.Image) bool {
-	outputFile, err := os.Create("sampleimage/test_" + append + ".png")
-	if nil != err {
-		fmt.Println(err)
-		return false
-	}
-	err = png.Encode(outputFile, outputImage) // エンコード
+//ReverseConcentrationのテスト
+func Test_ReverseConcentration(t *testing.T) {
+	// 10*10の画像を作る
+	var obj effect
+	obj.inputImage = createBuffImage(10, 10)
+	buf := obj.ReverseConcentration()
+	obj.imageLoop(func(x, y int) {
+		r1, g1, b1, a1 := obj.inputImage.At(x, y).RGBA()
+		r2, g2, b2, a2 := buf.At(x, y).RGBA()
+		if a1 != a2 {
+			t.Errorf("a val error %d:%d (%d:%d)", x, y, a1, a2)
+		}
+		ary := []uint32{r1 + r2, g1 + g2, b1 + b2}
+		for _, v := range ary {
+			if ColorWidth != v {
+				t.Errorf("color error %d:%d (%x)%x", x, y, v, ColorWidth)
+			}
+		}
+	})
+}
 
-	if nil != err {
-		fmt.Println(err)
-		return false
+//Monochromeのテスト
+func Test_Monochrome(t *testing.T) {
+	// 10*10の画像を作る
+	var obj effect
+	obj.inputImage = createBuffImage(10, 10)
+	buf := obj.Monochrome()
+	//	試験関数
+	getMono := func(r, g, b float64) uint16 {
+		return uint16(r*RedNTSC + g*GreenNTSC + b*BlueNTSC)
 	}
-	defer outputFile.Close()
-	return true
+	const ThresholdValue = ColorWidth / 100
+	obj.imageLoop(func(x, y int) {
+		r1, g1, b1, a1 := obj.inputImage.At(x, y).RGBA()
+		r2, g2, b2, a2 := buf.At(x, y).RGBA()
+		if a1 != a2 {
+			t.Errorf("a val error %d:%d (%d:%d)", x, y, a1, a2)
+		}
+		if r2 != g2 || g2 != b2 {
+			t.Errorf("a val error %d:%d:%d", r2, g2, b2)
+		}
+		mono := getMono(float64(r1), float64(g1), float64(b1))
+		abs := math.Abs(float64(r2) - float64(mono))
+		if abs >= ThresholdValue {
+			t.Errorf("a val error %d:%d", r2, mono)
+		}
+	})
+}
+
+//FourToneのテスト
+func Test_FourTone(t *testing.T) {
+	// 10*10の画像を作る
+	var obj effect
+	obj.inputImage = createBuffImage(10, 10)
+	buf := obj.FourTone()
+	countList := make([]uint32, 0, 6)
+	obj.imageLoop(func(x, y int) {
+		r, g, b, _ := buf.At(x, y).RGBA()
+		add := false
+		vals := []uint32{r, g, b}
+		for _, val := range vals {
+			for _, v := range countList {
+				if val == v {
+					add = true
+					break
+				}
+			}
+			if add {
+				countList = append(countList, val)
+			}
+		}
+	})
+	if len(countList) > 4 {
+		t.Errorf("count error:%d", len(countList))
+	}
 }
