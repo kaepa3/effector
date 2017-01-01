@@ -10,7 +10,7 @@ import (
 
 func Test_Effect(t *testing.T) {
 	// ファイル読み込み
-	inputImage := inputFile("sampleimage/test.png")
+	inputImage := inputFile("sampleimage/test.jpg")
 	if nil == inputImage {
 		t.Error("error read file")
 	}
@@ -36,11 +36,8 @@ func Test_Effect(t *testing.T) {
 	}
 }
 func Test_OutMeta(t *testing.T) {
-	eff := NewEffect(inputFile("sampleimage/test_ave.png"))
-	normalFuncs := []func(){eff.Histogram}
-	for _, v := range normalFuncs {
-		v()
-	}
+	eff := NewEffect(inputFile("sampleimage/test.jpg"))
+	eff.Histogram("test.png hist", "nodo", "dosu", "sampleimage/hist_org.png")
 }
 
 func inputFile(path string) image.Image {

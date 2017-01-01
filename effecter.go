@@ -23,7 +23,7 @@ type Effect interface {
 	UnlinearDensity() image.Image
 	ContrastImprovement() image.Image
 	AverageHistogram() image.Image
-	Histogram()
+	Histogram(title, xLabel, yLabel, output string)
 }
 type effect struct {
 	inputImage image.Image
@@ -178,43 +178,55 @@ const RGBAMax = 3
 const IndexR = 0
 const IndexG = 1
 const IndexB = 2
+const ColorWidth = math.MaxUint16 + 1
 
 // 最近傍方
-func (ef *effect) Histogram() {
+func (ef *effect) Histogram(title, xLabel, yLabel, output string) {
 	//	グラフの準備
 	p, _ := plot.New()
-	p.Title.Text = "histogram"
-	p.X.Label.Text = "X"
-	p.Y.Label.Text = "Y"
+	p.Title.Text = title
+	p.X.Label.Text = xLabel
+	p.Y.Label.Text = yLabel
 	//プロットの準備
-	// 先に入れ物を作る
-	const ColorSize = math.MaxUint16 + 1
-	var dataSet [RGBAMax][ColorSize]uint16
+	hisR, hisG, hisB, hisL := ef.makeHistogramData()
 
+	// 各値グラフのプロット
+	addPlotter(p, hisR, 0)
+	addPlotter(p, hisG, 1)
+	addPlotter(p, hisB, 2)
+	addPlotter(p, hisL, 3)
+
+	// 出力
+	p.Save(6*vg.Inch, 5*vg.Inch, output)
+	return
+}
+
+func addPlotter(p *plot.Plot, data [ColorWidth]uint16, key int) {
+	var line plotter.XYer
+	plots := make(plotter.XYs, len(data))
+	line = plots
+	for i, v := range data {
+		plots[i].X = float64(i)
+		plots[i].Y = float64(v)
+	}
+	graph, _, _ := plotter.NewLinePoints(line)
+	graph.Color = plotutil.Color(key)
+	p.Add(graph)
+	p.Legend.Add("line:"+strconv.Itoa(key), graph)
+	return
+}
+
+func (ef *effect) makeHistogramData() (rD, gD, bD, lD [ColorWidth]uint16) {
 	ef.imageLoop(ef.inputImage.Bounds(), func(x, y int) color.RGBA64 {
 		//画素をそれぞれ数える
 		r, g, b, _ := ef.inputImage.At(x, y).RGBA()
-		dataSet[IndexR][r]++
-		dataSet[IndexG][g]++
-		dataSet[IndexB][b]++
+		rD[r]++
+		gD[g]++
+		bD[b]++
+		l := (3*r + 6*g + b) / 10
+		lD[l]++
 		return color.RGBA64{0, 0, 0, 0}
 	})
-	// 各値グラフのプロット
-	for key, v := range dataSet {
-		var line plotter.XYer
-		plots := make(plotter.XYs, ColorSize)
-		line = plots
-		for i := 0; i < len(v); i++ {
-			plots[i].X = float64(i)
-			plots[i].Y = float64(v[i])
-		}
-		graph, _, _ := plotter.NewLinePoints(line)
-		graph.Color = plotutil.Color(key)
-		p.Add(graph)
-		p.Legend.Add("line:"+strconv.Itoa(key), graph)
-
-	}
-	p.Save(6*vg.Inch, 5*vg.Inch, "sampleimage/line_sample.png")
 	return
 }
 
@@ -283,44 +295,30 @@ func (ef *effect) ContrastImprovement() image.Image {
 
 // ヒストグラム平均化
 func (ef *effect) AverageHistogram() image.Image {
-	const GasoMax = math.MaxUint16 + 1
 	rect := ef.inputImage.Bounds()
-	//平均画素数
-	mean := float64((rect.Size().X * rect.Size().Y)) / float64(GasoMax)
-	//ヒストグラムの作成
-	var histR [GasoMax]uint32
-	var histG [GasoMax]uint32
-	var histB [GasoMax]uint32
-	ef.imageLoop(rect, func(x, y int) color.RGBA64 {
-		r, g, b, _ := ef.inputImage.At(x, y).RGBA()
-		histR[r]++
-		histG[g]++
-		histB[b]++
-		return color.RGBA64{0, 0, 0, 0}
-	})
-	calc := func(his [GasoMax]uint32, table *[GasoMax]uint32) {
-		histTotal := uint32(0)
-		val := uint32(0)
-		//平均値の計算
-		for i := 0; i < GasoMax; i++ {
-			histTotal = histTotal + his[i]
-			val = uint32(float64(histTotal) / mean)
-			table[i] = val
-		}
-	}
-	//平均値の計算
-	var tableR [GasoMax]uint32
-	var tableG [GasoMax]uint32
-	var tableB [GasoMax]uint32
-	calc(histR, &tableR)
-	calc(histG, &tableG)
-	calc(histB, &tableB)
+	//ヒストグラムの取得
+	_, _, _, hisL := ef.makeHistogramData()
+	//lookupTBLの作成
+	luTbl := createLookupTable(hisL, rect)
 	//描画
-	return ef.imageLoop(rect, func(x, y int) color.RGBA64 {
-		r, _, _, a := ef.inputImage.At(x, y).RGBA()
-		rVal := uint16(tableR[r])
-		// gVal := uint16(tableG[g])
-		// bVal := uint16(tableB[b])
-		return color.RGBA64{rVal, rVal, rVal, uint16(a)}
+	var buf effect
+	buf.inputImage = ef.imageLoop(rect, func(x, y int) color.RGBA64 {
+		r, g, b, a := ef.inputImage.At(x, y).RGBA()
+		return color.RGBA64{luTbl[r], luTbl[g], luTbl[b], uint16(a)}
 	})
+	buf.Histogram("ave histgram", "x", "y", "sampleimage/hist_ave.png")
+	return buf.inputImage
+}
+func createLookupTable(his [ColorWidth]uint16, rect image.Rectangle) (table [ColorWidth]uint16) {
+	var sum, val uint16
+	//平均画素数
+	average := uint16(((rect.Size().X * rect.Size().Y) / ColorWidth) + 1)
+	//平均値の計算
+	for i, v := range his {
+		sum += v
+		val += sum / average
+		sum %= average
+		table[i] = val
+	}
+	return
 }
