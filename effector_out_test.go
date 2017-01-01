@@ -1,4 +1,4 @@
-package effecter
+package effector
 
 import (
 	"fmt"
@@ -10,34 +10,30 @@ import (
 
 func Test_Effect(t *testing.T) {
 	// ファイル読み込み
-	inputImage := inputFile("sampleimage/test.jpg")
-	if nil == inputImage {
+	in := inputFile("sampleimage/test.jpg")
+	if nil == in {
 		t.Error("error read file")
 	}
-	eff := NewEffect(inputImage)
 
-	funcs := []struct {
-		Action func() image.Image
-		Plefex string
-	}{
-		{eff.Monochrome, "mono"},
-		{eff.ReverseConcentration, "revcon"},
-		{eff.FourTone, "fourtone"},
-		{eff.ChangeSizeKin, "sizekin"},
-		{eff.ChangeSizeSen, "sizesen"},
-		{eff.LinearDensity, "linerden"},
-		{eff.UnlinearDensity, "unden"},
-		{eff.ContrastImprovement, "contrast"},
-		{eff.AverageHistogram, "ave"},
-	}
-	for _, v := range funcs {
-		// ファイル出力
-		outputFile(v.Plefex, v.Action())
-	}
+	outputFile("mono", Monochrome(in))
+	outputFile("revcon", ReverseConcentration(in))
+	outputFile("fourtone", FourTone(in))
+	outputFile("linerden", LinearDensity(in, 0x10, 0xFF00))
+	outputFile("unden", UnlinearDensity(in))
+	outputFile("contrast", ContrastImprovement(in))
+	outputFile("ave", AverageHistogram(in))
+
 }
+
+func Test_SizeChange(t *testing.T) {
+	img := inputFile("sampleimage/test.jpg")
+	outputFile("sizekin", ChangeSizeKin(img, 0.8, 0.8))
+	outputFile("sizesen", ChangeSizeSen(img, 0.7, 0.2))
+}
+
 func Test_OutMeta(t *testing.T) {
-	eff := NewEffect(inputFile("sampleimage/test.jpg"))
-	eff.Histogram("test.png hist", "nodo", "dosu", "sampleimage/hist_org.png")
+	img := inputFile("sampleimage/test.jpg")
+	Histogram(img, "test.png hist", "nodo", "dosu", "sampleimage/hist_org.png")
 }
 
 func inputFile(path string) image.Image {
