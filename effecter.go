@@ -34,37 +34,38 @@ func NewEffect(in image.Image) Effect {
 	return &effect{in}
 }
 
-func (ef *effect) imageLoop(rect image.Rectangle, effectFunction func(x, y int) color.RGBA64) image.Image {
+func (ef *effect) imageLoop(effectFunction func(x, y int)) {
+	rect := ef.inputImage.Bounds()
 	width := rect.Size().X
 	height := rect.Size().Y
-	rgba := image.NewRGBA(rect)
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 			// 座標(x,y)のR, G, B, α の値を取得
-			col := effectFunction(x, y)
-			rgba.Set(x, y, col)
+			effectFunction(x, y)
 		}
 	}
-	return rgba
 }
 
 // 逆にする。
 func (ef *effect) ReverseConcentration() image.Image {
-	var col color.RGBA64
-	return ef.imageLoop(ef.inputImage.Bounds(), func(x, y int) color.RGBA64 {
+	rgba := image.NewRGBA(ef.inputImage.Bounds())
+	ef.imageLoop(func(x, y int) {
+		var col color.RGBA64
 		r, g, b, a := ef.inputImage.At(x, y).RGBA()
 		col.R = math.MaxUint16 - uint16(r)
 		col.G = math.MaxUint16 - uint16(g)
 		col.B = math.MaxUint16 - uint16(b)
 		col.A = uint16(a)
-		return col
+		rgba.Set(x, y, col)
 	})
+	return rgba
 }
 
 // モノクロにする
 func (ef *effect) Monochrome() image.Image {
-	var col color.RGBA64
-	return ef.imageLoop(ef.inputImage.Bounds(), func(x, y int) color.RGBA64 {
+	rgba := image.NewRGBA(ef.inputImage.Bounds())
+	ef.imageLoop(func(x, y int) {
+		var col color.RGBA64
 		r, g, b, a := ef.inputImage.At(x, y).RGBA()
 		//それぞれを重み付けして足し合わせる(NTSC 系加重平均法)
 		outR := float32(r) * 0.298912
@@ -75,14 +76,17 @@ func (ef *effect) Monochrome() image.Image {
 		col.G = mono
 		col.B = mono
 		col.A = uint16(a)
-		return col
+		rgba.Set(x, y, col)
 	})
+	return rgba
 }
 
 // 4階調にする
 func (ef *effect) FourTone() image.Image {
-	var col color.RGBA64
-	return ef.imageLoop(ef.inputImage.Bounds(), func(x, y int) color.RGBA64 {
+	rgba := image.NewRGBA(ef.inputImage.Bounds())
+
+	ef.imageLoop(func(x, y int) {
+		var col color.RGBA64
 		r, g, b, a := ef.inputImage.At(x, y).RGBA()
 		//	4階調とする
 		tone := 4
@@ -95,8 +99,9 @@ func (ef *effect) FourTone() image.Image {
 			*ptr[i] = (uint16(v) / z1) * z2
 		}
 		col.A = uint16(a)
-		return col
+		rgba.Set(x, y, col)
 	})
+	return rgba
 }
 
 var up = func(val int, rat float64) int { return int(float64(val) * rat) }
@@ -104,7 +109,6 @@ var down = func(val int, rat float64) int { return int(float64(val) / rat) }
 
 // 最近傍方
 func (ef *effect) ChangeSizeKin() image.Image {
-
 	// とりあえず正方形にして、1/2倍にする
 	ratio := 0.9
 	rect := ef.inputImage.Bounds()
@@ -113,10 +117,15 @@ func (ef *effect) ChangeSizeKin() image.Image {
 	newRect := image.Rect(0, 0, width, height)
 	yRatio := float64(height) / float64(rect.Size().Y)
 
-	return ef.imageLoop(newRect, func(x, y int) color.RGBA64 {
-		r, g, b, a := ef.inputImage.At(down(x, ratio), down(y, yRatio)).RGBA()
-		return color.RGBA64{uint16(r), uint16(g), uint16(b), uint16(a)}
-	})
+	rgba := image.NewRGBA(newRect)
+
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			r, g, b, a := ef.inputImage.At(down(x, ratio), down(y, yRatio)).RGBA()
+			rgba.Set(x, y, color.RGBA64{uint16(r), uint16(g), uint16(b), uint16(a)})
+		}
+	}
+	return rgba
 }
 
 func (ef *effect) ChangeSizeSen() image.Image {
@@ -129,9 +138,13 @@ func (ef *effect) ChangeSizeSen() image.Image {
 	newRect := image.Rect(0, 0, width, height)
 	yRatio := float64(height) / float64(rect.Size().Y)
 
-	return ef.imageLoop(newRect, func(x, y int) color.RGBA64 {
-		return ef.senning(x, y, ratio, yRatio)
-	})
+	rgba := image.NewRGBA(newRect)
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			rgba.Set(x, y, ef.senning(x, y, ratio, yRatio))
+		}
+	}
+	return rgba
 }
 
 func (ef *effect) senning(x, y int, xRatio, yRatio float64) color.RGBA64 {
@@ -217,7 +230,7 @@ func addPlotter(p *plot.Plot, data [ColorWidth]uint16, key int) {
 }
 
 func (ef *effect) makeHistogramData() (rD, gD, bD, lD [ColorWidth]uint16) {
-	ef.imageLoop(ef.inputImage.Bounds(), func(x, y int) color.RGBA64 {
+	ef.imageLoop(func(x, y int) {
 		//画素をそれぞれ数える
 		r, g, b, _ := ef.inputImage.At(x, y).RGBA()
 		rD[r]++
@@ -225,7 +238,6 @@ func (ef *effect) makeHistogramData() (rD, gD, bD, lD [ColorWidth]uint16) {
 		bD[b]++
 		l := (3*r + 6*g + b) / 10
 		lD[l]++
-		return color.RGBA64{0, 0, 0, 0}
 	})
 	return
 }
@@ -244,10 +256,13 @@ func (ef *effect) LinearDensity() image.Image {
 		}
 		return uint16(v)
 	}
-	return ef.imageLoop(ef.inputImage.Bounds(), func(x, y int) color.RGBA64 {
+	rgba := image.NewRGBA(ef.inputImage.Bounds())
+	ef.imageLoop(func(x, y int) {
 		r, g, b, a := ef.inputImage.At(x, y).RGBA()
-		return color.RGBA64{con(r), con(g), con(b), uint16(a)}
+
+		rgba.Set(x, y, color.RGBA64{con(r), con(g), con(b), uint16(a)})
 	})
+	return rgba
 }
 
 func unlinerCon(val uint32, gamma float64) uint16 {
@@ -262,11 +277,12 @@ func unlinerCon(val uint32, gamma float64) uint16 {
 
 // 非線形濃度変換
 func (ef *effect) UnlinearDensity() image.Image {
-
-	return ef.imageLoop(ef.inputImage.Bounds(), func(x, y int) color.RGBA64 {
+	rgba := image.NewRGBA(ef.inputImage.Bounds())
+	ef.imageLoop(func(x, y int) {
 		r, g, b, a := ef.inputImage.At(x, y).RGBA()
-		return color.RGBA64{unlinerCon(r, 0.5), unlinerCon(g, 0.5), unlinerCon(b, 0.5), uint16(a)}
+		rgba.Set(x, y, color.RGBA64{unlinerCon(r, 0.5), unlinerCon(g, 0.5), unlinerCon(b, 0.5), uint16(a)})
 	})
+	return rgba
 }
 
 // コントラスト改善
@@ -287,10 +303,12 @@ func (ef *effect) ContrastImprovement() image.Image {
 		}
 		return uint16(v)
 	}
-	return ef.imageLoop(ef.inputImage.Bounds(), func(x, y int) color.RGBA64 {
+	rgba := image.NewRGBA(ef.inputImage.Bounds())
+	ef.imageLoop(func(x, y int) {
 		r, g, b, a := ef.inputImage.At(x, y).RGBA()
-		return color.RGBA64{con(r), con(g), con(b), uint16(a)}
+		rgba.Set(x, y, color.RGBA64{con(r), con(g), con(b), uint16(a)})
 	})
+	return rgba
 }
 
 // ヒストグラム平均化
@@ -302,13 +320,17 @@ func (ef *effect) AverageHistogram() image.Image {
 	luTbl := createLookupTable(hisL, rect)
 	//描画
 	var buf effect
-	buf.inputImage = ef.imageLoop(rect, func(x, y int) color.RGBA64 {
+	rgba := image.NewRGBA(ef.inputImage.Bounds())
+	ef.imageLoop(func(x, y int) {
 		r, g, b, a := ef.inputImage.At(x, y).RGBA()
-		return color.RGBA64{luTbl[r], luTbl[g], luTbl[b], uint16(a)}
+		rgba.Set(x, y,
+			color.RGBA64{luTbl[r], luTbl[g], luTbl[b], uint16(a)})
 	})
+	buf.inputImage = rgba
 	buf.Histogram("ave histgram", "x", "y", "sampleimage/hist_ave.png")
 	return buf.inputImage
 }
+
 func createLookupTable(his [ColorWidth]uint16, rect image.Rectangle) (table [ColorWidth]uint16) {
 	var sum, val uint16
 	//平均画素数
