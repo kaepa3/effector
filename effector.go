@@ -12,6 +12,7 @@ import (
 	"github.com/gonum/plot/vg"
 	"github.com/kaepa3/effector/ex"
 	"github.com/kaepa3/effector/icom"
+	"github.com/kaepa3/effector/spatial"
 )
 
 //ReverseConcentration は与えられた画像の濃度を逆転する
@@ -278,4 +279,10 @@ func addPlotter(p *plot.Plot, data [ex.ColorWidthAryMax]uint16, key int) {
 	p.Add(graph)
 	p.Legend.Add("line:"+strconv.Itoa(key), graph)
 	return
+}
+
+// MultiplyAdd は与えられた画像に対して積和演算を実施する。
+func AverageFilter(img image.Image) image.Image {
+
+	return icom.SimpleEffect(img, spatial.AverageFunc)
 }

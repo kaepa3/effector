@@ -83,3 +83,7 @@ func Test_FourTone(t *testing.T) {
 		t.Errorf("count error:%d", len(countList))
 	}
 }
+
+func Test_AverageFilter(t *testing.T) {
+
+}

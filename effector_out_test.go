@@ -22,6 +22,7 @@ func Test_Effect(t *testing.T) {
 	outputFile("unden", UnlinearDensity(in))
 	outputFile("contrast", ContrastImprovement(in))
 	outputFile("ave", AverageHistogram(in))
+	outputFile("avefil", AverageFilter(in))
 
 }
 
