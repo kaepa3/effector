@@ -281,8 +281,13 @@ func addPlotter(p *plot.Plot, data [ex.ColorWidthAryMax]uint16, key int) {
 	return
 }
 
-// MultiplyAdd は与えられた画像に対して積和演算を実施する。
-func AverageFilter(img image.Image) image.Image {
+//AverageFilter は与えられた画像に対して積和演算から平均値を採用する。
+func AverageFilter(img image.Image, centerWeight float64) image.Image {
+	doFunc := spatial.AverageFunc(centerWeight)
+	return icom.SimpleEffect(img, doFunc)
+}
 
-	return icom.SimpleEffect(img, spatial.AverageFunc)
+//AverageFilter は与えられた画像に対して積和演算から中央値を採用する。
+func MedianFilter(img image.Image) image.Image {
+	return icom.SimpleEffect(img, spatial.MedianFunc)
 }

@@ -22,8 +22,8 @@ func Test_Effect(t *testing.T) {
 	outputFile("unden", UnlinearDensity(in))
 	outputFile("contrast", ContrastImprovement(in))
 	outputFile("ave", AverageHistogram(in))
-	outputFile("avefil", AverageFilter(in))
-
+	outputFile("avefil", AverageFilter(in, 1.2))
+	outputFile("media", MedianFilter(in))
 }
 
 func Test_SizeChange(t *testing.T) {
