@@ -16,11 +16,11 @@ func Test_Effect(t *testing.T) {
 	}
 
 	outputFile("mono", Monochrome(in))
-	outputFile("revcon", ReverseConcentration(in))
-	outputFile("fourtone", FourTone(in))
+	outputFile("revcon", ReverseDensity(in))
+	outputFile("fourtone", FourTone(in, 4))
 	outputFile("linerden", LinearDensity(in, 0x10, 0xFF00))
-	outputFile("unden", UnlinearDensity(in))
-	outputFile("contrast", ContrastImprovement(in))
+	outputFile("unden", UnlinearDensity(in, 0.5))
+	outputFile("contrast", ContrastImprovement(in, 0.5))
 	outputFile("ave", AverageHistogram(in))
 	outputFile("avefil", AverageFilter(in, 1.2))
 	outputFile("media", MedianFilter(in))

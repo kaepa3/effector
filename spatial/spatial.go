@@ -3,10 +3,10 @@ package spatial
 import (
 	"image"
 	"image/color"
-	"localhost/effector/ex"
 	"math"
 	"sort"
 
+	"github.com/kaepa3/effector/ex"
 	"github.com/kaepa3/effector/icom"
 )
 

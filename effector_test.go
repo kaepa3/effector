@@ -10,10 +10,10 @@ import (
 )
 
 //ReverseConcentrationのテスト
-func Test_ReverseConcentration(t *testing.T) {
+func Test_ReverseDensity(t *testing.T) {
 	// 10*10の画像を作る
 	img := testutill.CreateImg(10, 10)
-	buf := ReverseConcentration(img)
+	buf := ReverseDensity(img)
 	icom.ImageLoop(img, func(x, y int) {
 		r1, g1, b1, a1 := img.At(x, y).RGBA()
 		r2, g2, b2, a2 := buf.At(x, y).RGBA()
@@ -60,7 +60,7 @@ func Test_Monochrome(t *testing.T) {
 func Test_FourTone(t *testing.T) {
 	// 10*10の画像を作る
 	img := testutill.CreateRndImg(10, 10)
-	buf := FourTone(img)
+	buf := FourTone(img, 4)
 	countList := make([]uint32, 0, 6)
 	icom.ImageLoop(img, func(x, y int) {
 		r, g, b, _ := buf.At(x, y).RGBA()
