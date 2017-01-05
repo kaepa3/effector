@@ -28,6 +28,8 @@ func Test_Effect(t *testing.T) {
 	outputFile("vlinefil", VirticalLineFilter(in, 1.2, true))
 	outputFile("hlinefil", HorizontalLineFilter(in, 1.2, true))
 	outputFile("laplacian", LaplacianFilter(in))
+	outputFile("sharpe", SharpeningFilter(in))
+
 }
 
 func Test_SizeChange(t *testing.T) {

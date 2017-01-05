@@ -313,3 +313,8 @@ func HorizontalLineFilter(img image.Image, weight float64, flg bool) image.Image
 func LaplacianFilter(img image.Image) image.Image {
 	return icom.SimpleEffect(img, spatial.LaplacianFunc)
 }
+
+//SharpeningFilter は鋭角化した画像を返す
+func SharpeningFilter(img image.Image) image.Image {
+	return icom.SimpleEffect(img, spatial.SharpeningFunc)
+}
