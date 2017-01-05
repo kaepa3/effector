@@ -1,7 +1,6 @@
 package spatial
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"localhost/effector/ex"
@@ -145,42 +144,36 @@ type Spatial struct {
 }
 
 //PrewittFunc は画像のあるXY近傍9PxにPrewittフィルターをかけて返す。
-func VirticalLineFunc(img image.Image, x, y int) color.RGBA64 {
-	xFilter := [3][3]float64{
-		// {-1 / 2, 1, -1 / 2},
-		// {-1 / 2, 1, -1 / 2},
-		// {-1 / 2, 1, -1 / 2},
-		{-0.5, 1, -0.5},
-		{-0.5, 1, -0.5},
-		{-0.5, 1, -0.5},
-	}
-	//情報の集約（フィルタ込み）
-	var rMd1, gMd1, bMd1 float64 = 0, 0, 0
-	for pX := 0; pX < 3; pX++ {
-		for pY := 0; pY < 3; pY++ {
-			r, g, b, _ := img.At(x+(pX-1), y+(pY-1)).RGBA()
-			rMd1 = rMd1 + xFilter[pY][pX]*float64(r)
-			gMd1 += xFilter[pY][pX] * float64(g)
-			bMd1 += xFilter[pY][pX] * float64(b)
+func VirticalLineFunc(weight float64, reverse bool) icom.EffectFunc {
+	return func(img image.Image, x, y int) color.RGBA64 {
+		var data Spatial
+		data.img = img
+		data.xFilter = [3][3]float64{
+			{-0.5, 1, -0.5},
+			{-0.5, 1, -0.5},
+			{-0.5, 1, -0.5},
 		}
-	}
-	mdFunc := func(md1 float64) uint16 {
-		gaso := ex.ColorWidth - int(md1)
-		if gaso > ex.ColorWidth {
-			gaso = ex.ColorWidth
-		} else if gaso < 0 {
-			gaso = 0
+		data.yFilter = [3][3]float64{}
+		//情報の集約（フィルタ込み）
+		data.mdFunc = func(md1, md2 float64) uint16 {
+			gaso := int(md1)
+			if reverse == true {
+				gaso = ex.ColorWidth - int(md1)
+			}
+
+			if gaso > ex.ColorWidth {
+				gaso = ex.ColorWidth
+			} else if gaso < 0 {
+				gaso = 0
+			}
+			return uint16(gaso)
 		}
-		return uint16(gaso)
+
+		col := data.CreateColor(x, y)
+		// フィルタの絶対値取得
+		val := uint16(float64(col.R) * weight)
+		return color.RGBA64{val, val, val, uint16(col.A)}
 	}
-	_, _, _, a := img.At(x, y).RGBA()
-
-	col := color.RGBA64{mdFunc(rMd1), mdFunc(gMd1), mdFunc(bMd1), uint16(a)}
-
-	// フィルタの絶対値取得
-	val := uint16(col.R * 1)
-	fmt.Printf("(%d:%d) %d:%d:%d", x, y, col.R, col.G, col.B)
-	return color.RGBA64{val, val, val, uint16(col.A)}
 }
 
 func (sp *Spatial) CreateColor(x, y int) color.RGBA64 {

@@ -3,6 +3,7 @@ package spatial
 import (
 	"image"
 	"image/color"
+	"localhost/effector/ex"
 	"testing"
 
 	"github.com/kaepa3/effector/icom"
@@ -30,14 +31,19 @@ func Test_AverageAndMedianFunc(t *testing.T) {
 
 func Test_VirticalLineFunc(t *testing.T) {
 	img := testutill.CreateImg(5, 5)
-
 	rgba := image.NewRGBA64(img.Bounds())
 	icom.ImageLoop(img, func(x int, y int) {
 		val := uint16(x)
 		rgba.Set(x, y, color.RGBA64{val, val, val, 1})
 	})
-	col := VirticalLineFunc(rgba, 1, 1)
+	doFunc := VirticalLineFunc(1.0, false)
+	col := doFunc(img, 1, 1)
 	if col.R != 0 || col.G != 0 || col.B != 0 {
+		t.Errorf("val err:%d,%d,%d", col.R, col.G, col.B)
+	}
+	doFunc = VirticalLineFunc(1.0, true)
+	col = doFunc(img, 1, 1)
+	if col.R != ex.ColorWidth || col.G != ex.ColorWidth || col.B != ex.ColorWidth {
 		t.Errorf("val err:%d,%d,%d", col.R, col.G, col.B)
 	}
 }
