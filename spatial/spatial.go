@@ -1,6 +1,7 @@
 package spatial
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"localhost/effector/ex"
@@ -97,14 +98,14 @@ func PrewittFunc(img image.Image, x, y int) color.RGBA64 {
 	}
 	// フィルタの情報の重み
 	xFilter := [][]int{
-		{1, 0, -1},
-		{1, 0, -1},
-		{1, 0, -1},
-	}
-	yFilter := [][]int{
 		{-1, -1, -1},
 		{0, 0, 0},
 		{1, 1, 1},
+	}
+	yFilter := [][]int{
+		{1, 0, -1},
+		{1, 0, -1},
+		{1, 0, -1},
 	}
 	//情報の集約（フィルタ込み）
 	var rMd1, rMd2, gMd1, gMd2, bMd1, bMd2 int = 0, 0, 0, 0, 0, 0
@@ -133,5 +134,77 @@ func PrewittFunc(img image.Image, x, y int) color.RGBA64 {
 	green := getValue(gMd1, gMd2)
 	blue := getValue(bMd1, bMd2)
 	_, _, _, a := img.At(x, y).RGBA()
+	return color.RGBA64{red, green, blue, uint16(a)}
+}
+
+type Spatial struct {
+	img     image.Image
+	xFilter [3][3]float64
+	yFilter [3][3]float64
+	mdFunc  func(md1, md2 float64) uint16
+}
+
+//PrewittFunc は画像のあるXY近傍9PxにPrewittフィルターをかけて返す。
+func VirticalLineFunc(img image.Image, x, y int) color.RGBA64 {
+	xFilter := [3][3]float64{
+		// {-1 / 2, 1, -1 / 2},
+		// {-1 / 2, 1, -1 / 2},
+		// {-1 / 2, 1, -1 / 2},
+		{-0.5, 1, -0.5},
+		{-0.5, 1, -0.5},
+		{-0.5, 1, -0.5},
+	}
+	//情報の集約（フィルタ込み）
+	var rMd1, gMd1, bMd1 float64 = 0, 0, 0
+	for pX := 0; pX < 3; pX++ {
+		for pY := 0; pY < 3; pY++ {
+			r, g, b, _ := img.At(x+(pX-1), y+(pY-1)).RGBA()
+			rMd1 = rMd1 + xFilter[pY][pX]*float64(r)
+			gMd1 += xFilter[pY][pX] * float64(g)
+			bMd1 += xFilter[pY][pX] * float64(b)
+		}
+	}
+	mdFunc := func(md1 float64) uint16 {
+		gaso := ex.ColorWidth - int(md1)
+		if gaso > ex.ColorWidth {
+			gaso = ex.ColorWidth
+		} else if gaso < 0 {
+			gaso = 0
+		}
+		return uint16(gaso)
+	}
+	_, _, _, a := img.At(x, y).RGBA()
+
+	col := color.RGBA64{mdFunc(rMd1), mdFunc(gMd1), mdFunc(bMd1), uint16(a)}
+
+	// フィルタの絶対値取得
+	val := uint16(col.R * 1)
+	fmt.Printf("(%d:%d) %d:%d:%d", x, y, col.R, col.G, col.B)
+	return color.RGBA64{val, val, val, uint16(col.A)}
+}
+
+func (sp *Spatial) CreateColor(x, y int) color.RGBA64 {
+	if isRect(x, y, sp.img) == true {
+		r, g, b, a := sp.img.At(x, y).RGBA()
+		return color.RGBA64{uint16(r), uint16(g), uint16(b), uint16(a)}
+	}
+	//情報の集約（フィルタ込み）
+	var rMd1, rMd2, gMd1, gMd2, bMd1, bMd2 float64 = 0, 0, 0, 0, 0, 0
+	for pX := 0; pX < 3; pX++ {
+		for pY := 0; pY < 3; pY++ {
+			r, g, b, _ := sp.img.At(x+(pX-1), y+(pY-1)).RGBA()
+			rMd1 += sp.xFilter[pX][pY] * float64(r)
+			rMd2 += sp.yFilter[pX][pY] * float64(r)
+			gMd1 += sp.xFilter[pX][pY] * float64(g)
+			gMd2 += sp.yFilter[pX][pY] * float64(r)
+			bMd1 += sp.xFilter[pX][pY] * float64(b)
+			bMd2 += sp.yFilter[pX][pY] * float64(r)
+		}
+	}
+	// フィルタの絶対値取得
+	red := sp.mdFunc(rMd1, rMd2)
+	green := sp.mdFunc(gMd1, gMd2)
+	blue := sp.mdFunc(bMd1, bMd2)
+	_, _, _, a := sp.img.At(x, y).RGBA()
 	return color.RGBA64{red, green, blue, uint16(a)}
 }

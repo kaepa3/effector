@@ -287,7 +287,7 @@ func AverageFilter(img image.Image, centerWeight float64) image.Image {
 	return icom.SimpleEffect(img, doFunc)
 }
 
-//AverageFilter は与えられた画像に対して積和演算から中央値を採用する。
+//MedianFilter は与えられた画像に対して積和演算から中央値を採用する。
 func MedianFilter(img image.Image) image.Image {
 	return icom.SimpleEffect(img, spatial.MedianFunc)
 }
@@ -295,4 +295,9 @@ func MedianFilter(img image.Image) image.Image {
 //PrewittFilter は与えられた画像に対してPrewittフィルターを適用する。
 func PrewittFilter(img image.Image) image.Image {
 	return icom.SimpleEffect(img, spatial.PrewittFunc)
+}
+
+//LineFilter は与えられた画像に対してPrewittフィルターを適用する。
+func LineFilter(img image.Image) image.Image {
+	return icom.SimpleEffect(img, spatial.VirticalLineFunc)
 }
