@@ -177,6 +177,7 @@ func AverageHistogramFunc(img image.Image) icom.EffectFunc {
 		return color.RGBA64{luTbl[r], luTbl[g], luTbl[b], uint16(a)}
 	}
 }
+
 func createLookupTable(his [ex.ColorWidthAryMax]uint16, rect image.Rectangle) (table [ex.ColorWidthAryMax]uint16) {
 	var sum, val uint16
 	//平均画素数

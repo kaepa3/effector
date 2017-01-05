@@ -29,18 +29,9 @@ func Test_Effect(t *testing.T) {
 	outputFile("hlinefil", HorizontalLineFilter(in, 1.2, true))
 	outputFile("laplacian", LaplacianFilter(in))
 	outputFile("sharpe", SharpeningFilter(in))
-
-}
-
-func Test_SizeChange(t *testing.T) {
-	img := inputFile("sampleimage/test.jpg")
-	outputFile("sizekin", ChangeSizeKin(img, 0.8, 0.8))
-	outputFile("sizesen", ChangeSizeSen(img, 0.7, 0.7))
-}
-
-func Test_OutMeta(t *testing.T) {
-	img := inputFile("sampleimage/test.jpg")
-	Histogram(img, "test.png hist", "nodo", "dosu", "sampleimage/hist_org.png")
+	outputFile("sizekin", ChangeSizeKin(in, 0.8, 0.8))
+	outputFile("sizesen", ChangeSizeSen(in, 0.7, 0.7))
+	outputFile("histgram_org", Histogram(in, "test.png hist", "nodo", "dosu"))
 }
 
 func inputFile(path string) image.Image {

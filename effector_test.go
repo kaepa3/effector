@@ -72,7 +72,6 @@ func Test_FourTone(t *testing.T) {
 					add = true
 					break
 				}
-
 			}
 			if add == false {
 				countList = append(countList, val)

@@ -2,14 +2,10 @@ package effector
 
 import (
 	"image"
-	"strconv"
 
-	"github.com/gonum/plot"
-	"github.com/gonum/plot/plotter"
-	"github.com/gonum/plot/plotutil"
-	"github.com/gonum/plot/vg"
 	"github.com/kaepa3/effector/density"
 	"github.com/kaepa3/effector/ex"
+	"github.com/kaepa3/effector/histogram"
 	"github.com/kaepa3/effector/icom"
 	"github.com/kaepa3/effector/spatial"
 )
@@ -79,38 +75,8 @@ func AverageHistogram(img image.Image) image.Image {
 }
 
 // Histogram は与えられた画像のヒストグラムを作成する
-func Histogram(img image.Image, title, xLabel, yLabel, output string) {
-	//	グラフの準備
-	p, _ := plot.New()
-	p.Title.Text = title
-	p.X.Label.Text = xLabel
-	p.Y.Label.Text = yLabel
-	//プロットの準備
-	hisR, hisG, hisB, hisL := icom.MakeHistogramData(img)
-
-	// 各値グラフのプロット
-	addPlotter(p, hisR, 0)
-	addPlotter(p, hisG, 1)
-	addPlotter(p, hisB, 2)
-	addPlotter(p, hisL, 3)
-
-	// 出力
-	p.Save(6*vg.Inch, 5*vg.Inch, output)
-	return
-}
-func addPlotter(p *plot.Plot, data [ex.ColorWidthAryMax]uint16, key int) {
-	var line plotter.XYer
-	plots := make(plotter.XYs, len(data))
-	line = plots
-	for i, v := range data {
-		plots[i].X = float64(i)
-		plots[i].Y = float64(v)
-	}
-	graph, _, _ := plotter.NewLinePoints(line)
-	graph.Color = plotutil.Color(key)
-	p.Add(graph)
-	p.Legend.Add("line:"+strconv.Itoa(key), graph)
-	return
+func Histogram(img image.Image, title, xLabel, yLabel string) image.Image {
+	return histogram.Output(img, title, xLabel, yLabel)
 }
 
 //AverageFilter は与えられた画像に対して積和演算から平均値を採用する。
