@@ -3,15 +3,24 @@ package spatial
 import (
 	"image"
 	"image/color"
-	"log"
+	"localhost/effector/ex"
+	"math"
 	"sort"
 
 	"github.com/kaepa3/effector/icom"
 )
 
+func isRect(x, y int, img image.Image) bool {
+	if x == 0 || y == 0 || x == img.Bounds().Size().X || y == img.Bounds().Size().Y {
+		return true
+	}
+	return false
+}
+
+//AverageFunc は画像XY近傍9Pxを取得し平均値を返す。
 func AverageFunc(centerWeight float64) icom.EffectFunc {
 	return func(img image.Image, x, y int) color.RGBA64 {
-		if x == 0 || y == 0 || x == img.Bounds().Size().X || y == img.Bounds().Size().Y {
+		if isRect(x, y, img) == true {
 			r, g, b, a := img.At(x, y).RGBA()
 			return color.RGBA64{uint16(r), uint16(g), uint16(b), uint16(a)}
 		}
@@ -38,6 +47,7 @@ func AverageFunc(centerWeight float64) icom.EffectFunc {
 	}
 }
 
+//Gasos は画素のソートのために使用するデータ型
 type Gasos []uint16
 
 func (s Gasos) Len() int {
@@ -52,8 +62,7 @@ func (s Gasos) Less(i, j int) bool {
 	return s[i] < s[j]
 }
 
-var counter uint
-
+//MedianFunc は画像のあるXY近傍9Pxを取得し５番目の値を返す。
 func MedianFunc(img image.Image, x, y int) color.RGBA64 {
 	aryR := make([]uint16, 10)
 	aryG := make([]uint16, 10)
@@ -71,13 +80,58 @@ func MedianFunc(img image.Image, x, y int) color.RGBA64 {
 			count++
 		}
 	}
+	// ソートする
 	sort.Sort(Gasos(aryR))
 	sort.Sort(Gasos(aryG))
 	sort.Sort(Gasos(aryB))
 	sort.Sort(Gasos(aryA))
-	if counter < 10 {
-		log.Print(aryR)
-	}
-	counter++
+
 	return color.RGBA64{aryR[4], aryG[4], aryB[4], aryA[4]}
+}
+
+//PrewittFunc は画像のあるXY近傍9PxにPrewittフィルターをかけて返す。
+func PrewittFunc(img image.Image, x, y int) color.RGBA64 {
+	if isRect(x, y, img) == true {
+		r, g, b, a := img.At(x, y).RGBA()
+		return color.RGBA64{uint16(r), uint16(g), uint16(b), uint16(a)}
+	}
+	// フィルタの情報の重み
+	xFilter := [][]int{
+		{1, 0, -1},
+		{1, 0, -1},
+		{1, 0, -1},
+	}
+	yFilter := [][]int{
+		{-1, -1, -1},
+		{0, 0, 0},
+		{1, 1, 1},
+	}
+	//情報の集約（フィルタ込み）
+	var rMd1, rMd2, gMd1, gMd2, bMd1, bMd2 int = 0, 0, 0, 0, 0, 0
+	for pX := 0; pX < 3; pX++ {
+		for pY := 0; pY < 3; pY++ {
+			r, g, b, _ := img.At(x+(pX-1), y+(pY-1)).RGBA()
+			rMd1 += xFilter[pX][pY] * int(r)
+			rMd2 += yFilter[pX][pY] * int(r)
+			gMd1 += xFilter[pX][pY] * int(g)
+			gMd2 += yFilter[pX][pY] * int(r)
+			bMd1 += xFilter[pX][pY] * int(b)
+			bMd2 += yFilter[pX][pY] * int(r)
+		}
+	}
+	// フィルタの絶対値取得
+	getValue := func(md1, md2 int) uint16 {
+		gaso := (math.Abs(float64(md1)) + math.Abs(float64(md2)))
+		if gaso > ex.ColorWidth {
+			gaso = ex.ColorWidth
+		} else if gaso < 0 {
+			gaso = 0
+		}
+		return uint16(gaso)
+	}
+	red := getValue(rMd1, rMd2)
+	green := getValue(gMd1, gMd2)
+	blue := getValue(bMd1, bMd2)
+	_, _, _, a := img.At(x, y).RGBA()
+	return color.RGBA64{red, green, blue, uint16(a)}
 }

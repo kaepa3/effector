@@ -24,6 +24,7 @@ func Test_Effect(t *testing.T) {
 	outputFile("ave", AverageHistogram(in))
 	outputFile("avefil", AverageFilter(in, 1.2))
 	outputFile("media", MedianFilter(in))
+	outputFile("prewitt", PrewittFilter(in))
 }
 
 func Test_SizeChange(t *testing.T) {
