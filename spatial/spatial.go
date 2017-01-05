@@ -3,10 +3,10 @@ package spatial
 import (
 	"image"
 	"image/color"
-	"localhost/effector/ex"
 	"math"
 	"sort"
 
+	"github.com/kaepa3/effector/ex"
 	"github.com/kaepa3/effector/icom"
 )
 
@@ -203,6 +203,8 @@ func HorizontalLineFunc(weight float64, reverse bool) icom.EffectFunc {
 		return color.RGBA64{val, val, val, uint16(col.A)}
 	}
 }
+
+//LaplacianFunc はラプラシアンフィルタをかけた画像を返す。
 func LaplacianFunc(img image.Image, x, y int) color.RGBA64 {
 	var data Spatial
 	data.img = img
@@ -227,6 +229,29 @@ func LaplacianFunc(img image.Image, x, y int) color.RGBA64 {
 	val := uint16(col.R)
 	return color.RGBA64{val, val, val, uint16(col.A)}
 
+}
+
+//SharpeningFunc は鋭角かした画像を返す。
+func SharpeningFunc(img image.Image, x, y int) color.RGBA64 {
+	var data Spatial
+	data.img = img
+	data.filter = [3][3]float64{
+		{0, -1, 0},
+		{-1, 5, -1},
+		{0, -1, 0},
+	}
+	//情報の集約（フィルタ込み）
+	data.mdFunc = func(sum float64) uint16 {
+		gaso := int(sum)
+		if gaso > ex.ColorWidth {
+			gaso = ex.ColorWidth
+		} else if gaso < 0 {
+			gaso = 0
+		}
+		return uint16(gaso)
+	}
+
+	return data.CreateColor(x, y)
 }
 
 func (sp *Spatial) CreateColor(x, y int) color.RGBA64 {

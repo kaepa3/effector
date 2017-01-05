@@ -16,11 +16,11 @@ func Test_Effect(t *testing.T) {
 	}
 
 	outputFile("mono", Monochrome(in))
-	outputFile("revcon", ReverseConcentration(in))
-	outputFile("fourtone", FourTone(in))
+	outputFile("revcon", ReverseDensity(in))
+	outputFile("fourtone", FourTone(in, 4))
 	outputFile("linerden", LinearDensity(in, 0x10, 0xFF00))
-	outputFile("unden", UnlinearDensity(in))
-	outputFile("contrast", ContrastImprovement(in))
+	outputFile("unden", UnlinearDensity(in, 0.5))
+	outputFile("contrast", ContrastImprovement(in, 0.5))
 	outputFile("ave", AverageHistogram(in))
 	outputFile("avefil", AverageFilter(in, 1.2))
 	outputFile("media", MedianFilter(in))
@@ -28,17 +28,10 @@ func Test_Effect(t *testing.T) {
 	outputFile("vlinefil", VirticalLineFilter(in, 1.2, true))
 	outputFile("hlinefil", HorizontalLineFilter(in, 1.2, true))
 	outputFile("laplacian", LaplacianFilter(in))
-}
-
-func Test_SizeChange(t *testing.T) {
-	img := inputFile("sampleimage/test.jpg")
-	outputFile("sizekin", ChangeSizeKin(img, 0.8, 0.8))
-	outputFile("sizesen", ChangeSizeSen(img, 0.7, 0.7))
-}
-
-func Test_OutMeta(t *testing.T) {
-	img := inputFile("sampleimage/test.jpg")
-	Histogram(img, "test.png hist", "nodo", "dosu", "sampleimage/hist_org.png")
+	outputFile("sharpe", SharpeningFilter(in))
+	outputFile("sizekin", ChangeSizeKin(in, 0.8, 0.8))
+	outputFile("sizesen", ChangeSizeSen(in, 0.7, 0.7))
+	outputFile("histgram_org", Histogram(in, "test.png hist", "nodo", "dosu"))
 }
 
 func inputFile(path string) image.Image {
