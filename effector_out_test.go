@@ -25,6 +25,9 @@ func Test_Effect(t *testing.T) {
 	outputFile("avefil", AverageFilter(in, 1.2))
 	outputFile("media", MedianFilter(in))
 	outputFile("prewitt", PrewittFilter(in))
+	outputFile("vlinefil", VirticalLineFilter(in, 1.2, true))
+	outputFile("hlinefil", HorizontalLineFilter(in, 1.2, true))
+	outputFile("laplacian", LaplacianFilter(in))
 }
 
 func Test_SizeChange(t *testing.T) {

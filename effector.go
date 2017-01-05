@@ -287,7 +287,7 @@ func AverageFilter(img image.Image, centerWeight float64) image.Image {
 	return icom.SimpleEffect(img, doFunc)
 }
 
-//AverageFilter は与えられた画像に対して積和演算から中央値を採用する。
+//MedianFilter は与えられた画像に対して積和演算から中央値を採用する。
 func MedianFilter(img image.Image) image.Image {
 	return icom.SimpleEffect(img, spatial.MedianFunc)
 }
@@ -295,4 +295,21 @@ func MedianFilter(img image.Image) image.Image {
 //PrewittFilter は与えられた画像に対してPrewittフィルターを適用する。
 func PrewittFilter(img image.Image) image.Image {
 	return icom.SimpleEffect(img, spatial.PrewittFunc)
+}
+
+//VirticalLineFilter は与えられた画像に対してPrewittフィルターを適用する。
+func VirticalLineFilter(img image.Image, weight float64, flg bool) image.Image {
+	doFunc := spatial.VirticalLineFunc(weight, flg)
+	return icom.SimpleEffect(img, doFunc)
+}
+
+//HorizontalLineFilter は与えられた画像に対してPrewittフィルターを適用する。
+func HorizontalLineFilter(img image.Image, weight float64, flg bool) image.Image {
+	doFunc := spatial.HorizontalLineFunc(weight, flg)
+	return icom.SimpleEffect(img, doFunc)
+}
+
+//LaplacianFilter はラプラシアンフィルタのかかった画像を返す。
+func LaplacianFilter(img image.Image) image.Image {
+	return icom.SimpleEffect(img, spatial.LaplacianFunc)
 }

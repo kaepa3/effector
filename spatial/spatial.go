@@ -97,14 +97,14 @@ func PrewittFunc(img image.Image, x, y int) color.RGBA64 {
 	}
 	// フィルタの情報の重み
 	xFilter := [][]int{
-		{1, 0, -1},
-		{1, 0, -1},
-		{1, 0, -1},
-	}
-	yFilter := [][]int{
 		{-1, -1, -1},
 		{0, 0, 0},
 		{1, 1, 1},
+	}
+	yFilter := [][]int{
+		{1, 0, -1},
+		{1, 0, -1},
+		{1, 0, -1},
 	}
 	//情報の集約（フィルタ込み）
 	var rMd1, rMd2, gMd1, gMd2, bMd1, bMd2 int = 0, 0, 0, 0, 0, 0
@@ -133,5 +133,121 @@ func PrewittFunc(img image.Image, x, y int) color.RGBA64 {
 	green := getValue(gMd1, gMd2)
 	blue := getValue(bMd1, bMd2)
 	_, _, _, a := img.At(x, y).RGBA()
+	return color.RGBA64{red, green, blue, uint16(a)}
+}
+
+type Spatial struct {
+	img    image.Image
+	filter [3][3]float64
+	mdFunc func(sum float64) uint16
+}
+
+//PrewittFunc は画像のあるXY近傍9PxにPrewittフィルターをかけて返す。
+func VirticalLineFunc(weight float64, reverse bool) icom.EffectFunc {
+	return func(img image.Image, x, y int) color.RGBA64 {
+		var data Spatial
+		data.img = img
+		data.filter = [3][3]float64{
+			{-0.5, 1, -0.5},
+			{-0.5, 1, -0.5},
+			{-0.5, 1, -0.5},
+		}
+		//情報の集約（フィルタ込み）
+		data.mdFunc = func(sum float64) uint16 {
+			gaso := int(sum * weight)
+			if reverse == true {
+				gaso = ex.ColorWidth - gaso
+			}
+			if gaso > ex.ColorWidth {
+				gaso = ex.ColorWidth
+			} else if gaso < 0 {
+				gaso = 0
+			}
+			return uint16(gaso)
+		}
+
+		col := data.CreateColor(x, y)
+		// フィルタの絶対値取得
+		val := uint16(col.R)
+		return color.RGBA64{val, val, val, uint16(col.A)}
+	}
+}
+
+//HorizontalLineFunc は画像のあるXY近傍9PxにPrewittフィルターをかけて返す。
+func HorizontalLineFunc(weight float64, reverse bool) icom.EffectFunc {
+	return func(img image.Image, x, y int) color.RGBA64 {
+		var data Spatial
+		data.img = img
+		data.filter = [3][3]float64{
+			{-0.5, -0.5, -0.5},
+			{1, 1, 1},
+			{-0.5, -0.5, -0.5},
+		}
+		//情報の集約（フィルタ込み）
+		data.mdFunc = func(sum float64) uint16 {
+			gaso := int(sum * weight)
+			if reverse == true {
+				gaso = ex.ColorWidth - gaso
+			}
+			if gaso > ex.ColorWidth {
+				gaso = ex.ColorWidth
+			} else if gaso < 0 {
+				gaso = 0
+			}
+			return uint16(gaso)
+		}
+
+		col := data.CreateColor(x, y)
+		// フィルタの絶対値取得
+		val := uint16(col.R)
+		return color.RGBA64{val, val, val, uint16(col.A)}
+	}
+}
+func LaplacianFunc(img image.Image, x, y int) color.RGBA64 {
+	var data Spatial
+	data.img = img
+	data.filter = [3][3]float64{
+		{-1, -1, -1},
+		{-1, 8, -1},
+		{-1, -1, -1},
+	}
+	//情報の集約（フィルタ込み）
+	data.mdFunc = func(sum float64) uint16 {
+		gaso := ex.ColorWidth/2 + int(sum)
+		if gaso > ex.ColorWidth {
+			gaso = ex.ColorWidth
+		} else if gaso < 0 {
+			gaso = 0
+		}
+		return uint16(gaso)
+	}
+
+	col := data.CreateColor(x, y)
+	// フィルタの絶対値取得
+	val := uint16(col.R)
+	return color.RGBA64{val, val, val, uint16(col.A)}
+
+}
+
+func (sp *Spatial) CreateColor(x, y int) color.RGBA64 {
+	if isRect(x, y, sp.img) == true {
+		r, g, b, a := sp.img.At(x, y).RGBA()
+		return color.RGBA64{uint16(r), uint16(g), uint16(b), uint16(a)}
+	}
+	//情報の集約（フィルタ込み）
+	var rSum, gSum, bSum float64 = 0, 0, 0
+	for pX := 0; pX < 3; pX++ {
+		for pY := 0; pY < 3; pY++ {
+			r, g, b, _ := sp.img.At(x+(pX-1), y+(pY-1)).RGBA()
+			rSum += sp.filter[pX][pY] * float64(r)
+			gSum += sp.filter[pX][pY] * float64(g)
+			bSum += sp.filter[pX][pY] * float64(b)
+		}
+	}
+	// フィルタの絶対値取得
+	red := sp.mdFunc(rSum)
+	green := sp.mdFunc(gSum)
+	blue := sp.mdFunc(bSum)
+	_, _, _, a := sp.img.At(x, y).RGBA()
 	return color.RGBA64{red, green, blue, uint16(a)}
 }
