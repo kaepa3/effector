@@ -8,6 +8,7 @@ import (
 	"github.com/kaepa3/effector/histogram"
 	"github.com/kaepa3/effector/icom"
 	"github.com/kaepa3/effector/spatial"
+	"github.com/kaepa3/effector/twoval"
 )
 
 //ReverseDensity は与えられた画像の濃度を逆転する
@@ -115,4 +116,16 @@ func LaplacianFilter(img image.Image) image.Image {
 //SharpeningFilter は鋭角化した画像を返す
 func SharpeningFilter(img image.Image) image.Image {
 	return icom.SimpleEffect(img, spatial.SharpeningFunc)
+}
+
+//StaticThreshold は固定式位置で２値化する。
+func StaticThreshold(img image.Image, threshold uint32) image.Image {
+	doFunc := twoval.StaticThreshold(threshold)
+	return icom.SimpleEffect(img, doFunc)
+}
+
+//StaticThreshold は固定式位置で２値化する。
+func VariableThreshold(img image.Image, size, width int, isBlack bool) image.Image {
+	doFunc := twoval.VariableThreshold(size, width, isBlack)
+	return icom.SimpleEffect(img, doFunc)
 }
