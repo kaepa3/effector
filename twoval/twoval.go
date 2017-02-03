@@ -276,10 +276,12 @@ func imgChase(x, y, code int, srcImg image.Image, workImg *image.RGBA) {
 func getCode(x, y int, img image.Image) int {
 	r, _, _, _ := img.At(x-1, y).RGBA()
 	if r != 0 {
+		//	外枠の走査開始
 		return 0
 	}
 	r, _, _, _ = img.At(x+1, y).RGBA()
 	if r != 0 {
+		//	内枠の走査開始
 		return 4
 	}
 	return -1
