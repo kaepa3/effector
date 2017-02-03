@@ -129,3 +129,13 @@ func VariableThreshold(img image.Image, size, width int, isBlack bool) image.Ima
 	doFunc := twoval.VariableThreshold(size, width, isBlack)
 	return icom.SimpleEffect(img, doFunc)
 }
+
+//Thinning は固定式位置で２値化する。
+func Thinning(img image.Image) image.Image {
+	return twoval.Thinning(img)
+}
+
+//BoundaryTracking は固定式位置で２値化する。
+func BoundaryTracking(img image.Image) image.Image {
+	return twoval.BoundaryTracking(img)
+}

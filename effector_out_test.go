@@ -40,8 +40,16 @@ func Test_EffectTwoVal(t *testing.T) {
 	if nil == in {
 		t.Error("error read file")
 	}
-	outputFile("static_th", StaticThreshold(in, 0xFFFF/2))
-	outputFile("vari_th", VariableThreshold(in, 40, 0x33, false))
+	// outputFile("static_th", StaticThreshold(in, 0xFFFF/2))
+	// outputFile("vari_th", VariableThreshold(in, 40, 0x33, false))
+
+	in = inputFile("sampleimage/test_vari_th.png")
+	if nil == in {
+		t.Error("error read file")
+	}
+
+	outputFile("thinning", Thinning(in))
+	outputFile("boundary", BoundaryTracking(in))
 }
 
 func inputFile(path string) image.Image {
