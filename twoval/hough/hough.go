@@ -4,6 +4,8 @@ import (
 	"image"
 	"math"
 
+	"golang.org/x/image/draw"
+
 	"github.com/kaepa3/effector/icom"
 	"github.com/llgcode/draw2d/draw2dimg"
 )
@@ -87,6 +89,7 @@ func createHough(rad0, rho0 float64, srcImage image.Image) image.Image {
 	yEnd := float64(size.X/2 + yy[1])
 
 	workImg := image.NewRGBA(srcImage.Bounds())
+	draw.Copy(workImg, image.Point{0, 0}, srcImage, srcImage.Bounds(), draw.Src, nil)
 	gc := draw2dimg.NewGraphicContext(workImg)
 	gc.MoveTo(xStart, yStart)
 	gc.LineTo(xEnd, yEnd)

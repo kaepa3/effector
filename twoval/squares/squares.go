@@ -5,13 +5,15 @@ import (
 	"log"
 	"math"
 
+	"golang.org/x/image/draw"
+
 	"github.com/kaepa3/effector/icom"
+	"github.com/llgcode/draw2d/draw2dimg"
 )
 
 const FormulaMax = 10
 
 func BoundaryTracking(srcImg image.Image) image.Image {
-	workImg := image.NewRGBA(srcImg.Bounds())
 	var coefficient [FormulaMax][FormulaMax]float64
 	var constant [FormulaMax]float64
 	//探索開始
@@ -28,6 +30,27 @@ func BoundaryTracking(srcImg image.Image) image.Image {
 		}
 	})
 	gauss(coefficient, constant)
+	workImg := image.NewRGBA(srcImg.Bounds())
+	draw.Copy(workImg, image.Point{0, 0}, srcImg, srcImg.Bounds(), draw.Src, nil)
+	size := srcImg.Bounds().Size()
+	var points [FormulaMax]image.Point
+	for x := 0; x < size.X; x++ {
+		yy := constant[0]
+		for k := 0; k < FormulaMax; k++ {
+			yy += constant[k] * math.Pow(x, k)
+			points[k].X = x
+			points[k].Y = yy
+		}
+	}
+	workImg := image.NewRGBA(srcImage.Bounds())
+	draw.Copy(workImg, image.Point{0, 0}, srcImage, srcImage.Bounds(), draw.Src, nil)
+	gc := draw2dimg.NewGraphicContext(workImg)
+	for _, v := range points {
+		gc.MoveTo(v.X, v.Y)
+		gc.LineTo(xEnd, yEnd)
+	}
+	gc.DrawImage(workImg)
+
 	return workImg
 }
 
